@@ -4,7 +4,7 @@ Author: Ari Liloia
 
 Design: 
 In this game, you get a point every time you are able to turn a knob to a certain angle (displayed onscreen)
-(This game started out as an attempt at implementing "picking" - Originally I wanted users to be able to click and drag the knob. I had trouble translating object coordinates to clip coordinates (this code is commented out) so at the last minute I changed the controls)
+(This game started out as an attempt at implementing "picking" - Originally I wanted users to be able to click and drag the knob. I had trouble translating object coordinates to clip coordinates (this code is commented out) so at the last minute I changed the controls. I'm committing the code I wrote / took with proper credit from stackexchange to try to do this, but commented it out)
 
 Screen Shot:
 

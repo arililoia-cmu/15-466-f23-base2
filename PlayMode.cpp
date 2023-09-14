@@ -40,12 +40,7 @@ Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
 
 
 PlayMode::PlayMode() : scene(*hexapod_scene) {
-	//get pointers to leg for convenience:
-	// for (auto &transform : scene.transforms) {
-	// 	if (transform.name == "Hip.FL") hip = &transform;
-	// 	else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
-	// 	else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
-	// }
+
 	for (auto &transform : scene.transforms) {
 		std::cout << "transform.name: " << transform.name << std::endl;
 		// if (transform.name == "Hip.FL") hip = &transform;
@@ -109,15 +104,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		}
 	}
-	// 	} else if (evt.key.keysym.sym == SDLK_w) {
-	// 		up.downs += 1;
-	// 		up.pressed = true;
-	// 		return true;
-	// 	} else if (evt.key.keysym.sym == SDLK_s) {
-	// 		down.downs += 1;
-	// 		down.pressed = true;
-	// 		return true;
-	// 	}
 	else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
 			left.pressed = false;
@@ -126,13 +112,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			right.pressed = false;
 			return true;
 		}
-	// 	} else if (evt.key.keysym.sym == SDLK_w) {
-	// 		up.pressed = false;
-	// 		return true;
-	// 	} else if (evt.key.keysym.sym == SDLK_s) {
-	// 		down.pressed = false;
-	// 		return true;
-	// 	}
 	} else 
 	if (evt.type == SDL_MOUSEBUTTONDOWN) {
 		if (SDL_GetRelativeMouseMode() == SDL_FALSE) {
@@ -212,13 +191,7 @@ void PlayMode::update(float elapsed) {
     // float z = 1.0f;
 	// std::cout << "x " << x << " y " << y << " z " << z << std::endl;
 	
-	// //slowly rotates through [0,1):
-	// wobble += elapsed / 10.0f;
-	// wobble -= std::floor(wobble);
 	
-	// std::cout << "wobble: " << wobble << std::endl;
-
-
 	// wobble += elapsed * 0;
 	if (left.pressed && !right.pressed){
 		wobble += elapsed;
@@ -246,45 +219,6 @@ void PlayMode::update(float elapsed) {
 		points++;
 		goal_angle = generate_random_angle();
 	}
-    // Print the angle and axis
-    // std::cout << "Angle: " << (int)(glm::degrees(angle)) << " degrees" << std::endl;
-    // std::cout << "Axis: (" << axis.x << ", " << axis.y << ", " << axis.z << ")" << std::endl;
-
-	
-	// hip->rotation = hip_base_rotation * glm::angleAxis(
-	// 	glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
-	// 	glm::vec3(0.0f, 1.0f, 0.0f)
-	// );
-	// upper_leg->rotation = upper_leg_base_rotation * glm::angleAxis(
-	// 	glm::radians(7.0f * std::sin(wobble * 2.0f * 2.0f * float(M_PI))),
-	// 	glm::vec3(0.0f, 0.0f, 1.0f)
-	// );
-	// lower_leg->rotation = lower_leg_base_rotation * glm::angleAxis(
-	// 	glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
-	// 	glm::vec3(0.0f, 0.0f, 1.0f)
-	// );
-
-	// //move camera:
-	// {
-
-	// 	//combine inputs into a move:
-	// 	constexpr float PlayerSpeed = 30.0f;
-	// 	glm::vec2 move = glm::vec2(0.0f);
-	// 	if (left.pressed && !right.pressed) move.x =-1.0f;
-	// 	if (!left.pressed && right.pressed) move.x = 1.0f;
-	// 	if (down.pressed && !up.pressed) move.y =-1.0f;
-	// 	if (!down.pressed && up.pressed) move.y = 1.0f;
-
-	// 	//make it so that moving diagonally doesn't go faster:
-	// 	if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
-
-	// 	glm::mat4x3 frame = camera->transform->make_local_to_parent();
-	// 	glm::vec3 frame_right = frame[0];
-	// 	//glm::vec3 up = frame[1];
-	// 	glm::vec3 frame_forward = -frame[2];
-
-	// 	camera->transform->position += move.x * frame_right + move.y * frame_forward;
-	// }
 
 	// //reset button press counters:
 	// left.downs = 0;
@@ -351,11 +285,5 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		
 		
-		
-		// float ofs = 2.0f / drawable_size.y;
-		// lines.draw_text(str_p + ": Current Angle = " + str_ca + ", Goal Angle = " + str_ga,
-		// 	glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
-		// 	glm::vec3(H*2, 0.0f, 0.0f), glm::vec3(0.0f, H*2, 0.0f),
-		// 	glm::u8vec4(0xff, 0x00, 0x00, 0x00));
 	}
 }
