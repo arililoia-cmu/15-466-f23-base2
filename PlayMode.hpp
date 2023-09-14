@@ -16,6 +16,7 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 	glm::vec2 calculate_ws_epos(glm::vec3 object_position);
+	int generate_angle();
 
 	//----- game state -----
 
@@ -37,7 +38,7 @@ struct PlayMode : Mode {
 	Scene::Transform *bottom_left = nullptr;
 	Scene::Transform *bottom_right = nullptr;
 
-	glm::quat knob_rotation;
+	glm::quat knob_base_rotation;
 	glm::vec3 knob_position;
 
 	glm::vec3 tl_wpos;
@@ -49,6 +50,8 @@ struct PlayMode : Mode {
 	glm::vec2 tr_pos;
 	glm::vec2 bl_pos;
 	glm::vec2 br_pos;
+
+	int goal_angle;
 
 
 

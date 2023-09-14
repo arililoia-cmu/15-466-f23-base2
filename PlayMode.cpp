@@ -58,7 +58,7 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 	if (knob == nullptr) throw std::runtime_error("Knob not found.");
 	// if (upper_leg == nullptr) throw std::runtime_error("Upper leg not found.");
 	// if (lower_leg == nullptr) throw std::runtime_error("Lower leg not found.");
-	knob_rotation = knob->rotation;
+	knob_base_rotation = knob->rotation;
 	knob_position = knob->position;
 
 	tl_wpos = top_left->position;
@@ -79,6 +79,16 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 PlayMode::~PlayMode() {
 }
 
+int PlayMode::generate_angle(){
+	// inspired by u/Walter's answer:
+	// https://stackoverflow.com/questions/5008804/generating-a-random-integer-from-a-range
+	std::random_device rd;     // Only used once to initialise (seed) engine
+	std::mt19937 rng(rd());    // Random-number engine used (Mersenne-Twister in this case)
+	std::uniform_int_distribution<int> uni(0,360); // Guaranteed unbiased
+	auto random_integer = uni(rng);
+	return random_integer;
+}
+
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
 
 	if (evt.type == SDL_KEYDOWN) {
@@ -86,14 +96,16 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			SDL_SetRelativeMouseMode(SDL_FALSE);
 			return true;
 		} 
-	// else if (evt.key.keysym.sym == SDLK_a) {
-	// 		left.downs += 1;
-	// 		left.pressed = true;
-	// 		return true;
-	// 	} else if (evt.key.keysym.sym == SDLK_d) {
-	// 		right.downs += 1;
-	// 		right.pressed = true;
-	// 		return true;
+		else if (evt.key.keysym.sym == SDLK_a) {
+			left.downs += 1;
+			left.pressed = true;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_s) {
+			right.downs += 1;
+			right.pressed = true;
+			return true;
+		}
+	}
 	// 	} else if (evt.key.keysym.sym == SDLK_w) {
 	// 		up.downs += 1;
 	// 		up.pressed = true;
@@ -103,13 +115,14 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	// 		down.pressed = true;
 	// 		return true;
 	// 	}
-	// } else if (evt.type == SDL_KEYUP) {
-	// 	if (evt.key.keysym.sym == SDLK_a) {
-	// 		left.pressed = false;
-	// 		return true;
-	// 	} else if (evt.key.keysym.sym == SDLK_d) {
-	// 		right.pressed = false;
-	// 		return true;
+	else if (evt.type == SDL_KEYUP) {
+		if (evt.key.keysym.sym == SDLK_a) {
+			left.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_s) {
+			right.pressed = false;
+			return true;
+		}
 	// 	} else if (evt.key.keysym.sym == SDLK_w) {
 	// 		up.pressed = false;
 	// 		return true;
@@ -153,7 +166,6 @@ glm::vec2 PlayMode::calculate_ws_epos(glm::vec3 object_position){
 	// The next step is to transform from this [-1, 1] space to window-relative coordinate
 	glm::vec2 windowSpacePos = (glm::vec2((ndcSpacePos.x+1.0)/2.0, (ndcSpacePos.y+1.0)/2.0)) * glm::vec2(1280, 720);
 	// code taken from the above stackexchange post ends here
-	
 	return windowSpacePos;
 
 }
@@ -168,52 +180,25 @@ void PlayMode::update(float elapsed) {
 	// from this documentation:
 	// https://wiki.libsdl.org/SDL2/SDL_GetMouseState
 
-	// code taken from this stackexchange post:
-	// https://stackoverflow.com/questions/8491247/c-opengl-convert-world-coords-to-screen2d-coords
-	// begins here:
-	// glm::vec4 objectpos(knob_position.x, knob_position.y, knob_position.z, 1.0f);	
-	// glm::vec4 clip_space_pos = camera->make_projection() * glm::mat4(camera->transform->make_world_to_local()) * objectpos;
-	// // transform this position from clip-space to normalized device coordinate space
-	// glm::vec3 ndcSpacePos = glm::vec3(clip_space_pos.x, clip_space_pos.y, clip_space_pos.z)/clip_space_pos.w;
-	// // The next step is to transform from this [-1, 1] space to window-relative coordinate
-	// glm::vec2 windowSpacePos = (glm::vec2((ndcSpacePos.x+1.0)/2.0, (ndcSpacePos.y+1.0)/2.0)) * glm::vec2(1280, 720);
-	// // code taken from the above stackexchange post ends here
-	// windowSpacePos[1] += 720;
-
 
 	tl_pos = calculate_ws_epos(tl_wpos);
 
 	std::cout << "tl_pos (" << tl_pos[0] << ", " << tl_pos[1] << ")" << std::endl;
-	// std::cout << "windowSpacePos (" << windowSpacePos[0] << ", " << windowSpacePos[1] << ")" << std::endl;
-
-	// mygl_Position = OBJECT_TO_CLIP * objectpos
-	// for (int i = 0; i < 4; ++i) {
-    //    std::cout << mygl_Position[i] << std::endl;
-    // }
-	//  std::cout << "====" << std::endl;
-	// for (int i = 0; i < 4; ++i) {
-    //  	for (int j = 0; j < 4; ++j) {
-	// 		std::cout << OBJECT_TO_CLIP_mat4[i][j] << std::endl;
-    // 	}
-    // }
-
-	// for (auto const &drawable : drawables) {
-	// 	assert(drawable.transform);
-	// }
 
 	int mouse_x, mouse_y;
 	SDL_GetMouseState(&mouse_x, &mouse_y);
 	
 
-	// if we are moving the camera
-	if (SDL_GetRelativeMouseMode()){
-		std::cout << "tl_pos.x,y " << tl_pos.x << " " << tl_pos.y << std::endl; 
-	}
-	// if not
-	else{
-		std::cout << "mouse_x " << mouse_x << " mouse_y " << mouse_y << std::endl;
-	}
-	
+	// // if we are moving the camera
+	// if (SDL_GetRelativeMouseMode()){
+	// 	std::cout << "tl_pos.x,y " << tl_pos.x << " " << tl_pos.y << std::endl; 
+	// }
+	// // if not
+	// else{
+	// 	std::cout << "mouse_x " << mouse_x << " mouse_y " << mouse_y << std::endl;
+	// }
+
+
 	// std::cout << knob_rotation << std::endl;
 	// std::cout << "knob->position: " << knob->position << std::endl;
 	// using this stack exchange post to experiment with ray casting:
@@ -227,7 +212,36 @@ void PlayMode::update(float elapsed) {
 	// //slowly rotates through [0,1):
 	// wobble += elapsed / 10.0f;
 	// wobble -= std::floor(wobble);
+	
+	// std::cout << "wobble: " << wobble << std::endl;
 
+
+	// wobble += elapsed * 0;
+	if (left.pressed && !right.pressed){
+		wobble += elapsed;
+		std::cout << "left pressed" << std::endl;
+		knob->rotation = knob_base_rotation *  glm::angleAxis(
+		glm::radians(20.0f * wobble * 2.0f * float(M_PI)),
+		glm::vec3(0.0f, 0.0f, 1.0f)
+		);
+	}
+	if (!left.pressed && right.pressed){
+		wobble -= elapsed;
+		std::cout << "right pressed" << std::endl;
+		knob->rotation = knob_base_rotation *  glm::angleAxis(
+		glm::radians(20.0f * wobble * 2.0f * float(M_PI)),
+		glm::vec3(0.0f, 0.0f, 1.0f)
+		);
+	}
+
+	float angle = 2.0f * acos(knob->rotation.w); // Calculate the angle in radians
+    // glm::vec3 axis = glm::normalize(glm::vec3(quaternion)); // Normalize the axis
+
+    // Print the angle and axis
+    std::cout << "Angle: " << glm::degrees(angle) << " degrees" << std::endl;
+    // std::cout << "Axis: (" << axis.x << ", " << axis.y << ", " << axis.z << ")" << std::endl;
+
+	
 	// hip->rotation = hip_base_rotation * glm::angleAxis(
 	// 	glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
 	// 	glm::vec3(0.0f, 1.0f, 0.0f)
@@ -304,12 +318,14 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+
+
+		lines.draw_text("A - turn knob left, S - turn knob right.escape ungrabs mouse ",
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		lines.draw_text("A - turn knob left, S - turn knob right.escape ungrabs mouse ",
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
