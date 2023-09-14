@@ -16,7 +16,7 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 	glm::vec2 calculate_ws_epos(glm::vec3 object_position);
-	int generate_angle();
+	int generate_random_angle();
 
 	//----- game state -----
 
@@ -51,7 +51,9 @@ struct PlayMode : Mode {
 	glm::vec2 bl_pos;
 	glm::vec2 br_pos;
 
-	int goal_angle;
+	int goal_angle = 100;
+	int current_angle;
+	int points = 0;
 
 
 

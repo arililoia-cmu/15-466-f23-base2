@@ -7,6 +7,7 @@
 #include "Load.hpp"
 #include "gl_errors.hpp"
 #include "data_path.hpp"
+#include <sstream>
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -35,6 +36,8 @@ Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
 
 	});
 });
+
+
 
 PlayMode::PlayMode() : scene(*hexapod_scene) {
 	//get pointers to leg for convenience:
@@ -79,7 +82,7 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 PlayMode::~PlayMode() {
 }
 
-int PlayMode::generate_angle(){
+int PlayMode::generate_random_angle(){
 	// inspired by u/Walter's answer:
 	// https://stackoverflow.com/questions/5008804/generating-a-random-integer-from-a-range
 	std::random_device rd;     // Only used once to initialise (seed) engine
@@ -236,9 +239,15 @@ void PlayMode::update(float elapsed) {
 
 	float angle = 2.0f * acos(knob->rotation.w); // Calculate the angle in radians
     // glm::vec3 axis = glm::normalize(glm::vec3(quaternion)); // Normalize the axis
+	current_angle = (int)(glm::degrees(angle));
+	
 
+	if ((current_angle == goal_angle) && !left.pressed && !right.pressed){
+		points++;
+		goal_angle = generate_random_angle();
+	}
     // Print the angle and axis
-    std::cout << "Angle: " << glm::degrees(angle) << " degrees" << std::endl;
+    // std::cout << "Angle: " << (int)(glm::degrees(angle)) << " degrees" << std::endl;
     // std::cout << "Axis: (" << axis.x << ", " << axis.y << ", " << axis.z << ")" << std::endl;
 
 	
@@ -288,7 +297,22 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	//update camera aspect ratio for drawable:
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
 
-	//set up light type and position for lit_color_texture_program:
+	// string to stream conversion taken u/pb_overflow's response here:
+	// https://www.experts-exchange.com/questions/21195748/itoa'-undeclared-first-use-this-function.html
+
+	std::ostringstream o_ca;	
+	o_ca << current_angle;
+	std::string str_ca = o_ca.str();
+
+	std::ostringstream o_ga;	
+	o_ga << goal_angle;
+	std::string str_ga = o_ga.str();
+
+	std::ostringstream o_p;	
+	o_p << points;
+	std::string str_p = o_p.str();
+
+
 	// TODO: consider using the Light(s) in the scene to do this
 	glUseProgram(lit_color_texture_program->program);
 	glUniform1i(lit_color_texture_program->LIGHT_TYPE_int, 1);
@@ -319,15 +343,19 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 		constexpr float H = 0.09f;
 
-
-		lines.draw_text("A - turn knob left, S - turn knob right.escape ungrabs mouse ",
+		
+		lines.draw_text(str_p + ": Current Angle = " + str_ca + ", Goal Angle = " + str_ga,
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
-			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+			glm::vec3(H*2, 0.0f, 0.0f), glm::vec3(0.0f, H*2, 0.0f),
+
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("A - turn knob left, S - turn knob right.escape ungrabs mouse ",
-			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
-			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+		
+		
+		
+		// float ofs = 2.0f / drawable_size.y;
+		// lines.draw_text(str_p + ": Current Angle = " + str_ca + ", Goal Angle = " + str_ga,
+		// 	glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
+		// 	glm::vec3(H*2, 0.0f, 0.0f), glm::vec3(0.0f, H*2, 0.0f),
+		// 	glm::u8vec4(0xff, 0x00, 0x00, 0x00));
 	}
 }
