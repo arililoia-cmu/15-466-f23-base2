@@ -47,6 +47,12 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 		std::cout << "transform.name: " << transform.name << std::endl;
 		// if (transform.name == "Hip.FL") hip = &transform;
 		if (transform.name == "Rotator") knob = &transform;
+		else if (transform.name == "TopLeft") top_left = &transform;
+		else if (transform.name == "TopRight") top_right = &transform;
+		else if (transform.name == "BottomLeft") bottom_left = &transform;
+		else if (transform.name == "BottomRight") bottom_right = &transform;
+		
+
 	}
 	// if (hip == nullptr) throw std::runtime_error("Hip not found.");
 	if (knob == nullptr) throw std::runtime_error("Knob not found.");
@@ -54,7 +60,13 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 	// if (lower_leg == nullptr) throw std::runtime_error("Lower leg not found.");
 	knob_rotation = knob->rotation;
 	knob_position = knob->position;
-	std::cout << "knob_position.x,y,z: " << knob_position.x << " " << knob_position.y << " " << knob_position.z << std::endl; 
+
+	tl_wpos = top_left->position;
+	tr_wpos = top_right->position;
+	bl_wpos = bottom_left->position;
+	br_wpos = bottom_right->position;
+
+	// std::cout << "knob_position.x,y,z: " << knob_position.x << " " << knob_position.y << " " << knob_position.z << std::endl; 
 	// hip_base_rotation = hip->rotation;
 	// upper_leg_base_rotation = upper_leg->rotation;
 	// lower_leg_base_rotation = lower_leg->rotation;
@@ -130,6 +142,22 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	return false;
 }
 
+glm::vec2 PlayMode::calculate_ws_epos(glm::vec3 object_position){
+	// code heavily inspired by this stackexchange post:
+	// https://stackoverflow.com/questions/8491247/c-opengl-convert-world-coords-to-screen2d-coords
+	// begins here:
+	glm::vec4 objectpos(object_position.x, object_position.y, object_position.z, 1.0f);	
+	glm::vec4 clip_space_pos = camera->make_projection() * glm::mat4(camera->transform->make_world_to_local()) * objectpos;
+	// transform this position from clip-space to normalized device coordinate space
+	glm::vec3 ndcSpacePos = glm::vec3(clip_space_pos.x, clip_space_pos.y, clip_space_pos.z)/clip_space_pos.w;
+	// The next step is to transform from this [-1, 1] space to window-relative coordinate
+	glm::vec2 windowSpacePos = (glm::vec2((ndcSpacePos.x+1.0)/2.0, (ndcSpacePos.y+1.0)/2.0)) * glm::vec2(1280, 720);
+	// code taken from the above stackexchange post ends here
+	
+	return windowSpacePos;
+
+}
+
 void PlayMode::update(float elapsed) {
 
 	// int window_width, window_height;
@@ -143,17 +171,20 @@ void PlayMode::update(float elapsed) {
 	// code taken from this stackexchange post:
 	// https://stackoverflow.com/questions/8491247/c-opengl-convert-world-coords-to-screen2d-coords
 	// begins here:
-	glm::vec4 objectpos(knob_position.x, knob_position.y, knob_position.z, 1.0f);	
-	glm::vec4 clip_space_pos = camera->make_projection() * glm::mat4(camera->transform->make_world_to_local()) * objectpos;
-	// transform this position from clip-space to normalized device coordinate space
-	glm::vec3 ndcSpacePos = glm::vec3(clip_space_pos.x, clip_space_pos.y, clip_space_pos.z)/clip_space_pos.w;
-	// The next step is to transform from this [-1, 1] space to window-relative coordinate
-	glm::vec2 windowSpacePos = (glm::vec2((ndcSpacePos.x+1.0)/2.0, (ndcSpacePos.y+1.0)/2.0)) * glm::vec2(1280, 720);
-	// code taken from the above stackexchange post ends here
+	// glm::vec4 objectpos(knob_position.x, knob_position.y, knob_position.z, 1.0f);	
+	// glm::vec4 clip_space_pos = camera->make_projection() * glm::mat4(camera->transform->make_world_to_local()) * objectpos;
+	// // transform this position from clip-space to normalized device coordinate space
+	// glm::vec3 ndcSpacePos = glm::vec3(clip_space_pos.x, clip_space_pos.y, clip_space_pos.z)/clip_space_pos.w;
+	// // The next step is to transform from this [-1, 1] space to window-relative coordinate
+	// glm::vec2 windowSpacePos = (glm::vec2((ndcSpacePos.x+1.0)/2.0, (ndcSpacePos.y+1.0)/2.0)) * glm::vec2(1280, 720);
+	// // code taken from the above stackexchange post ends here
+	// windowSpacePos[1] += 720;
 
-	for (int i = 0; i < 2; ++i) {
-       std::cout << windowSpacePos[i] << std::endl;
-    }
+
+	tl_pos = calculate_ws_epos(tl_wpos);
+
+	std::cout << "tl_pos (" << tl_pos[0] << ", " << tl_pos[1] << ")" << std::endl;
+	// std::cout << "windowSpacePos (" << windowSpacePos[0] << ", " << windowSpacePos[1] << ")" << std::endl;
 
 	// mygl_Position = OBJECT_TO_CLIP * objectpos
 	// for (int i = 0; i < 4; ++i) {
@@ -176,7 +207,7 @@ void PlayMode::update(float elapsed) {
 
 	// if we are moving the camera
 	if (SDL_GetRelativeMouseMode()){
-		std::cout << "knob_position.x,y,z: " << knob_position.x << " " << knob_position.y << " " << knob_position.z << std::endl; 
+		std::cout << "tl_pos.x,y " << tl_pos.x << " " << tl_pos.y << std::endl; 
 	}
 	// if not
 	else{

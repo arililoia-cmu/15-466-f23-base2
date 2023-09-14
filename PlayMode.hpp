@@ -15,6 +15,7 @@ struct PlayMode : Mode {
 	virtual bool handle_event(SDL_Event const &, glm::uvec2 const &window_size) override;
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
+	glm::vec2 calculate_ws_epos(glm::vec3 object_position);
 
 	//----- game state -----
 
@@ -30,8 +31,26 @@ struct PlayMode : Mode {
 
 	// knob stuff
 	Scene::Transform *knob = nullptr;
+
+	Scene::Transform *top_left = nullptr;
+	Scene::Transform *top_right = nullptr;
+	Scene::Transform *bottom_left = nullptr;
+	Scene::Transform *bottom_right = nullptr;
+
 	glm::quat knob_rotation;
 	glm::vec3 knob_position;
+
+	glm::vec3 tl_wpos;
+	glm::vec3 tr_wpos;
+	glm::vec3 bl_wpos;
+	glm::vec3 br_wpos;
+
+	glm::vec2 tl_pos;
+	glm::vec2 tr_pos;
+	glm::vec2 bl_pos;
+	glm::vec2 br_pos;
+
+
 
 	//hexapod leg to wobble:
 	// Scene::Transform *hip = nullptr;
