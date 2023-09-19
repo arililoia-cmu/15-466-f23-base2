@@ -16,9 +16,12 @@ struct PlayMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 	glm::vec2 calculate_ws_epos(glm::vec3 object_position);
+	glm::vec2 calculate_ws_epos2(Scene::Transform *object);
+	bool check_if_inside(glm::uvec2 check, glm::uvec2 point1, glm::uvec2 point2, glm::uvec2 point3, glm::uvec2 point4);
 	int generate_random_angle();
 
 	//----- game state -----
+
 
 	//input tracking:
 	struct Button {
@@ -37,6 +40,13 @@ struct PlayMode : Mode {
 	Scene::Transform *top_right = nullptr;
 	Scene::Transform *bottom_left = nullptr;
 	Scene::Transform *bottom_right = nullptr;
+
+
+	// Scene::Drawable *top_left_drawable = nullptr;
+	// Scene::Drawable *top_right_drawable = nullptr;
+	// Scene::Drawable *bottom_left_drawable = nullptr;
+	// Scene::Drawable *bottom_right_drawable = nullptr;
+
 
 	glm::quat knob_base_rotation;
 	glm::vec3 knob_position;

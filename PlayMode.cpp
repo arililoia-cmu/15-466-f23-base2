@@ -8,6 +8,7 @@
 #include "gl_errors.hpp"
 #include "data_path.hpp"
 #include <sstream>
+#include <algorithm>
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -152,24 +153,101 @@ glm::vec2 PlayMode::calculate_ws_epos(glm::vec3 object_position){
 
 }
 
+
+// go from local (tiny square) to parent to world to clip
+// we can use glm::mat4x3(drawable.transform->make_local_to_world());
+// for local to world transformation
+// we can use glm::mat4(camera->make_projection() * glm::mat4(camera->transform->make_world_to_local()));
+// for world to clip transformation
+// how does this work vector math wise? local to world is 4x3, world to clip is 4x4
+// the object's position is 3x1 though right
+// 
+// basecode specific questions - drawables and transforms
+// in Load<Scene> there's a line: scene.drawables.emplace_back(transform);
+// are drawables and transforms the same? how are they different
+// in the basecode pointers to the transforms are saved in the header
+// looking at functions given for coordinate transformation, looks like we need to access them as drawables
+
+
+
+glm::vec2 PlayMode::calculate_ws_epos2(Scene::Transform *object){
+
+
+	glm::vec4 object_position = glm::vec4(object->position.x, object->position.y, object->position.z, 1.0f);
+	glm::mat4x3 object_to_world = object->make_local_to_world();
+	// object to world 3x4 x 4x1 coordinates = 3x1 world coordinates
+	glm::vec3 op_world = object_to_world * object_position;
+
+	// make a 4 vector out of op_world
+	glm::vec4 op_world_vec4 = glm::vec4(op_world.x, op_world.y, op_world.z, 1.0f);
+
+	assert(camera->transform);
+	glm::mat4 world_to_clip = camera->make_projection() * glm::mat4(camera->transform->make_world_to_local());
+	// world to clip 4x4 x 4x1 world coords = 4x1 clip coords
+	glm::vec4 op_clip = world_to_clip * op_world_vec4;
+
+	float ws_x = op_clip.x / op_clip.w;
+	float ws_y = op_clip.y / op_clip.w;
+
+
+	// The next step is to transform from this [-1, 1] space to window-relative coordinate
+	// taken from this stackexchange post
+	// https://stackoverflow.com/questions/8491247/c-opengl-convert-world-coords-to-screen2d-coords
+	float ws_x_real = ((ws_x+1.0f)/2.0f)*1280;
+	float ws_y_real = 720 - (((ws_y+1.0f)/2.0f)*720);
+
+	return glm::vec2(ws_x_real, ws_y_real);
+
+}
+
+bool PlayMode::check_if_inside(glm::uvec2 check, glm::uvec2 point1, 
+	glm::uvec2 point2, glm::uvec2 point3, glm::uvec2 point4){
+		// min/max usage taken from:
+		// https://en.cppreference.com/w/cpp/algorithm/max
+		float max_x = std::max(std::max(point1.x, point2.x), std::max(point3.x, point4.x));
+		float min_x = std::min(std::min(point1.x, point2.x), std::min(point3.x, point4.x));
+
+		float max_y = std::max(std::max(point1.y, point2.y), std::max(point3.y, point4.y));
+		float min_y = std::min(std::min(point1.y, point2.y), std::min(point3.y, point4.y));
+		
+		if (check.x >= min_x && check.x <= max_x && check.y >= min_y && check.y <= max_y){
+			return true;
+		}
+		return false;
+}
+
+
 void PlayMode::update(float elapsed) {
 
-	// int window_width, window_height;
-	// SDL_GetWindowSize(window, &window_width, &window_height);
+	// int ww, wh;
+	// SDL_GetWindowSize(window, &ww, &wh);
+	// std::cout << ww << std::endl;
 	// int window_width = 1280;
 	// int window_height = 720;
 
 	// from this documentation:
 	// https://wiki.libsdl.org/SDL2/SDL_GetMouseState
 
+	
+	// tl_pos = calculate_ws_epos(tl_wpos);
 
-	tl_pos = calculate_ws_epos(tl_wpos);
-
-	std::cout << "tl_pos (" << tl_pos[0] << ", " << tl_pos[1] << ")" << std::endl;
+	// std::cout << "tl_pos (" << tl_pos[0] << ", " << tl_pos[1] << ")" << std::endl;
 
 	int mouse_x, mouse_y;
+	// glm::uvec2 mouse_position;
 	SDL_GetMouseState(&mouse_x, &mouse_y);
-	
+	std::cout << "mouse_x " << mouse_x << " mouse_y " << mouse_y << std::endl;
+	glm::uvec2 mouse_position(mouse_x, mouse_y);
+
+	glm::vec2 tl_coords = calculate_ws_epos2(top_left);
+	glm::vec2 tr_coords = calculate_ws_epos2(top_right);
+	glm::vec2 bl_coords = calculate_ws_epos2(bottom_left);
+	glm::vec2 br_coords = calculate_ws_epos2(bottom_right);
+	if(check_if_inside(mouse_position, tl_coords, tr_coords, bl_coords, br_coords)){
+		std::cout << "T" << std::endl;
+	}else{
+		std::cout << "F" << std::endl;
+	}
 
 	// // if we are moving the camera
 	// if (SDL_GetRelativeMouseMode()){
